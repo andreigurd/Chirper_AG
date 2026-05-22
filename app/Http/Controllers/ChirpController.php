@@ -19,33 +19,31 @@ class ChirpController extends Controller
 
     public function store(Request $request)
     {
-            $validated = $request->validate([
-        'message' => [
-            'required',
-            'string',
-            'max:255',
-            Rule::unique('chirps')->where(function ($query) use ($user) {
-                return $query->where('user_id', $user->id);
-            })
-        ],
-    ]);
+        $validated = $request->validate([
+            'message' => 'required|string|max:255',
+        ]);
+
+        // Use the authenticated user
+        auth()->user()->chirps()->create($validated);
 
         return redirect('/')->with('success', 'Your chirp has been posted!');
     }
+
     public function edit(Chirp $chirp)
     {
-        // We'll add authorization in lesson 11
+        $this->authorize('update', $chirp);
+
         return view('chirps.edit', compact('chirp'));
     }
 
     public function update(Request $request, Chirp $chirp)
     {
-        // Validate
+        $this->authorize('update', $chirp);
+
         $validated = $request->validate([
             'message' => 'required|string|max:255',
         ]);
 
-        // Update
         $chirp->update($validated);
 
         return redirect('/')->with('success', 'Chirp updated!');
@@ -53,6 +51,8 @@ class ChirpController extends Controller
 
     public function destroy(Chirp $chirp)
     {
+        $this->authorize('delete', $chirp);
+
         $chirp->delete();
 
         return redirect('/')->with('success', 'Chirp deleted!');
